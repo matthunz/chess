@@ -14,8 +14,12 @@ import Data.Bits
 import Data.Int (Int64)
 import Data.Word (Word64)
 import Square
+import Numeric (showBin)
 
-newtype BitBoard = BitBoard Word64 deriving (Show)
+newtype BitBoard = BitBoard Word64
+
+instance Show BitBoard where
+  show (BitBoard bb) = showBin bb ""
 
 fromSquare :: Square -> BitBoard
 fromSquare square = BitBoard $ 1 `shiftL` fromEnum square

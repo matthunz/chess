@@ -1,6 +1,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module Board where
+module Board (Color (..)) where
 
 import BitBoard
 import Data.Bits
