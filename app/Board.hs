@@ -1,6 +1,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module Board (Color (..), attackersTo, standard) where
+module Board (Color (..), attackersTo, standard, Board (..), legalMoves, Move(..), move, fen) where
 
 import Attacks
 import BitBoard
@@ -12,7 +12,15 @@ import Types
 
 data Role = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
-data Move = NormalMove Role Square Square | EnPassantMove Square Square
+data Move
+  = NormalMove
+      { normalRole :: Role,
+        normalFrom :: Square,
+        normalTo :: Square,
+        normalCapture :: Maybe Role
+      }
+  | EnPassantMove Square Square
+  deriving (Show)
 
 data Board = Board
   { getTurn :: Color,
@@ -58,7 +66,7 @@ standard =
 
 move :: Move -> Board -> Board
 move m board = case m of
-  NormalMove role from to ->
+  NormalMove role from to capture ->
     moveRole $ moveColor board
     where
       moveRole board = case role of
@@ -121,3 +129,32 @@ pieceChar (Piece color role) = case color of
       Rook -> 'R'
       Queen -> 'Q'
       King -> 'K'
+
+knightMoves :: BitBoard -> Board -> [Move]
+knightMoves (BitBoard target) board = concatMap f (squares $ getKnights board)
+  where
+    f from =
+      map
+        ( \to ->
+            NormalMove
+              { normalRole = Knight,
+                normalFrom = from,
+                normalTo = to,
+                normalCapture = roleAt to board
+              }
+        )
+        (squares $ BitBoard $ target .&. attacks)
+      where
+        BitBoard attacks = knightAttacks from
+
+legalMoves :: Board -> [Move]
+legalMoves board =
+  let BitBoard bb =
+        ( case getTurn board of
+            Black -> getBlack
+            White -> getWhite
+        )
+          board
+   in knightMoves
+        (BitBoard $ complement bb)
+        board
