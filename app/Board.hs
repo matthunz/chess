@@ -2,11 +2,10 @@
 
 module Board where
 
+import BitBoard
 import Data.Bits
 import Data.Int (Int64)
 import Data.Word (Word64)
-
-import BitBoard
 import Square
 
 data Color = Black | White deriving (Show)
@@ -29,6 +28,21 @@ data Board = Board
   }
   deriving (Show)
 
+fen :: Board -> String
+fen board = concatMap withRank (reverse $ enumFromTo Rank1 Rank8)
+  where
+    withRank rank =
+      (if rank /= Rank8 then "/" else "")
+        ++ if count /= 0 then acc ++ show count else acc
+      where
+        (count, acc) = foldr zipper (0, []) (enumFromTo FileA FileH)
+        zipper file (count, acc) = case pieceAt (square file rank) board of
+          Just piece ->
+            let s = if count /= 0 then show count else ""
+             in (0, acc ++ s ++ [pieceChar piece])
+          Nothing -> (count + 1, acc)
+
+standard :: Board
 standard =
   Board
     White
@@ -80,3 +94,22 @@ pieceAt square board = case roleAt square board of
   Nothing -> Nothing
   where
     color = if contains square $ getBlack board then Black else White
+
+pieceChar :: Piece -> Char
+pieceChar (Piece color role) = case color of
+  Black ->
+    case role of
+      Pawn -> 'p'
+      Knight -> 'n'
+      Bishop -> 'b'
+      Rook -> 'r'
+      Queen -> 'q'
+      King -> 'k'
+  White ->
+    case role of
+      Pawn -> 'P'
+      Knight -> 'N'
+      Bishop -> 'B'
+      Rook -> 'R'
+      Queen -> 'Q'
+      King -> 'K'

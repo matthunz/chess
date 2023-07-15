@@ -1,4 +1,4 @@
-module Square  (File, Rank, Square, square) where
+module Square  (File(..), Rank(..), Square(..), square) where
 
 import Data.Bits
 import Data.Int (Int64)
