@@ -17,7 +17,21 @@ import Data.Word (Word64)
 import Numeric (showBin)
 import Square
 
-newtype BitBoard = BitBoard Word64
+newtype BitBoard = BitBoard Word64 deriving (Eq)
+
+instance Bits BitBoard where
+  (.&.) (BitBoard lhs) (BitBoard rhs) = BitBoard $ lhs .&. rhs
+  (.|.) (BitBoard lhs) (BitBoard rhs) = BitBoard $ lhs .|. rhs
+  xor (BitBoard lhs) (BitBoard rhs) = BitBoard $ lhs `xor` rhs
+  complement (BitBoard bb) = BitBoard $ complement bb
+  shift (BitBoard bb) n = BitBoard $ bb `shift` n
+  rotate (BitBoard bb) n = BitBoard $ bb `rotate` n
+  bitSizeMaybe (BitBoard bb) = bitSizeMaybe bb
+  isSigned (BitBoard bb) = isSigned bb
+  bit i = BitBoard $ bit i
+  testBit (BitBoard bb) = testBit bb
+  bitSize = error "Unimplemented!"
+  popCount (BitBoard bb) = popCount bb
 
 instance Semigroup BitBoard where
   (<>) (BitBoard lhs) (BitBoard rhs) = BitBoard $ lhs .|. rhs
@@ -34,10 +48,11 @@ fromRank rank = BitBoard $ 0xff `shiftL` (fromEnum rank * 8)
 fromFile :: File -> BitBoard
 fromFile file = BitBoard $ 0x0101_0101_0101_0101 `shiftL` fromEnum file
 
+isEmpty :: BitBoard -> Bool
+isEmpty (BitBoard bb) = bb == 0
+
 contains :: Square -> BitBoard -> Bool
-contains square (BitBoard bb) = (bb .&. rhs) /= 0
-  where
-    BitBoard rhs = fromSquare square
+contains square bb = not . isEmpty $ bb .&. fromSquare square
 
 moveSquare :: BitBoard -> Square -> Square -> BitBoard
 moveSquare (BitBoard bb) fromSquare toSquare =
