@@ -1,14 +1,14 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module Board (Color (..)) where
+module Board (Color (..), attackersTo, standard) where
 
+import Attacks
 import BitBoard
 import Data.Bits
 import Data.Int (Int64)
 import Data.Word (Word64)
 import Square
-
-data Color = Black | White deriving (Show)
+import Types
 
 data Role = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
@@ -73,6 +73,14 @@ move m board = case m of
         White -> board {getTurn = Black, getWhite = mv $ getWhite board}
       mv bb = moveSquare bb from to
   EnPassantMove from to -> error "TODO"
+
+attackersTo :: Square -> Color -> Board -> BitBoard
+attackersTo square attacker board =
+  let BitBoard pawnAttackers = pawnAttacks attacker square
+      BitBoard pawns = getPawns board
+      BitBoard knightAttackers = knightAttacks square
+      BitBoard knights = getKnights board
+   in BitBoard $ (pawnAttackers .&. pawns) .|. (knightAttackers .&. knights)
 
 roleAt :: Square -> Board -> Maybe Role
 roleAt square board
