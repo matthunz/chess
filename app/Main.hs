@@ -6,6 +6,34 @@ import Data.Int (Int64)
 main :: IO ()
 main = putStrLn "Hello, Haskell!"
 
+data Color = Black | White deriving (Show)
+
+toggleColor :: Color -> Color
+toggleColor Black = White
+toggleColor White = Black
+
+data Role = Pawn
+
+data Move = NormalMove Role Square Square | EnPassantMove Square Square
+
+data Board = Board
+  { getTurn :: Color,
+    getBlack :: BitBoard,
+    getWhite :: BitBoard
+  }
+  deriving (Show)
+
+move :: Move -> Board -> Board
+move m board = case m of
+  NormalMove role from to ->
+    Board (toggleColor $ getTurn board) black white
+    where
+      (black, white) = case getTurn board of
+        Black -> (mv $ getBlack board, getWhite board)
+        White -> (getBlack board, mv $ getWhite board)
+      mv bb = moveSquare bb from to
+  EnPassantMove from to -> error "TODO"
+
 newtype BitBoard = BitBoard Int64 deriving (Show)
 
 fromSquare :: Square -> BitBoard
@@ -16,6 +44,12 @@ fromRank rank = BitBoard $ 0xff `shiftL` (fromEnum rank * 8)
 
 fromFile :: File -> BitBoard
 fromFile file = BitBoard $ 0x0101010101010101 `shiftL` fromEnum file
+
+moveSquare :: BitBoard -> Square -> Square -> BitBoard
+moveSquare (BitBoard bb) fromSquare toSquare =
+  let movedBit = shiftL 1 (fromEnum toSquare)
+      clearedFromBit = bb .&. complement (shiftL 1 (fromEnum fromSquare))
+   in BitBoard (clearedFromBit .|. movedBit)
 
 data File = FileA | FileB | FileC | FileD | FileE | FileF | FileG | FileH deriving (Show, Eq, Enum)
 
