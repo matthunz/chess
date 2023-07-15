@@ -1,7 +1,10 @@
+{-# LANGUAGE NumericUnderscores #-}
+
 module Main where
 
 import Data.Bits
 import Data.Int (Int64)
+import Data.Word (Word64)
 
 main :: IO ()
 main = putStrLn "Hello, Haskell!"
@@ -21,9 +24,23 @@ data Board = Board
     getQueens :: BitBoard,
     getKings :: BitBoard,
     getBlack :: BitBoard,
-    getWhite :: BitBoard
+    getWhite :: BitBoard,
+    getOccupied :: BitBoard
   }
   deriving (Show)
+
+standard =
+  Board
+    White
+    (BitBoard 0x00ff_0000_0000_ff00)
+    (BitBoard 0x4200_0000_0000_0042)
+    (BitBoard 0x2400_0000_0000_0024)
+    (BitBoard 0x8100_0000_0000_0081)
+    (BitBoard 0x0800_0000_0000_0008)
+    (BitBoard 0x1000_0000_0000_0010)
+    (BitBoard 0xffff_0000_0000_0000)
+    (BitBoard 0xffff)
+    (BitBoard 0xffff_0000_0000_ffff)
 
 move :: Move -> Board -> Board
 move m board = case m of
@@ -43,7 +60,28 @@ move m board = case m of
       mv bb = moveSquare bb from to
   EnPassantMove from to -> error "TODO"
 
-newtype BitBoard = BitBoard Int64 deriving (Show)
+roleAt :: Square -> Board -> Maybe Role
+roleAt square board
+  | check getPawns = Just Pawn
+  | check getKnights = Just Knight
+  | check getBishops = Just Bishop
+  | check getRooks = Just Rook
+  | check getQueens = Just Queen
+  | check getKings = Just King
+  | otherwise = Nothing
+  where
+    check f = contains square (f board)
+
+data Piece = Piece Color Role
+
+pieceAt :: Square -> Board -> Maybe Piece
+pieceAt square board = case roleAt square board of
+  Just role -> Just $ Piece color role
+  Nothing -> Nothing
+  where
+    color = if contains square $ getBlack board then Black else White
+
+newtype BitBoard = BitBoard Word64 deriving (Show)
 
 fromSquare :: Square -> BitBoard
 fromSquare square = BitBoard $ 1 `shiftL` fromEnum square
@@ -52,7 +90,12 @@ fromRank :: Rank -> BitBoard
 fromRank rank = BitBoard $ 0xff `shiftL` (fromEnum rank * 8)
 
 fromFile :: File -> BitBoard
-fromFile file = BitBoard $ 0x0101010101010101 `shiftL` fromEnum file
+fromFile file = BitBoard $ 0x0101_0101_0101_0101 `shiftL` fromEnum file
+
+contains :: Square -> BitBoard -> Bool
+contains square (BitBoard bb) = (bb .&. rhs) /= 0
+  where
+    BitBoard rhs = fromSquare square
 
 moveSquare :: BitBoard -> Square -> Square -> BitBoard
 moveSquare (BitBoard bb) fromSquare toSquare =
