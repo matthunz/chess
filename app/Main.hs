@@ -8,16 +8,18 @@ main = putStrLn "Hello, Haskell!"
 
 data Color = Black | White deriving (Show)
 
-toggleColor :: Color -> Color
-toggleColor Black = White
-toggleColor White = Black
-
-data Role = Pawn
+data Role = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
 data Move = NormalMove Role Square Square | EnPassantMove Square Square
 
 data Board = Board
   { getTurn :: Color,
+    getPawns :: BitBoard,
+    getKnights :: BitBoard,
+    getBishops :: BitBoard,
+    getRooks :: BitBoard,
+    getQueens :: BitBoard,
+    getKings :: BitBoard,
     getBlack :: BitBoard,
     getWhite :: BitBoard
   }
@@ -26,11 +28,18 @@ data Board = Board
 move :: Move -> Board -> Board
 move m board = case m of
   NormalMove role from to ->
-    Board (toggleColor $ getTurn board) black white
+    moveRole $ moveColor board
     where
-      (black, white) = case getTurn board of
-        Black -> (mv $ getBlack board, getWhite board)
-        White -> (getBlack board, mv $ getWhite board)
+      moveRole board = case role of
+        Pawn -> board {getPawns = mv $ getPawns board}
+        Knight -> board {getKnights = mv $ getKnights board}
+        Bishop -> board {getBishops = mv $ getBishops board}
+        Rook -> board {getRooks = mv $ getRooks board}
+        Queen -> board {getQueens = mv $ getQueens board}
+        King -> board {getKings = mv $ getKings board}
+      moveColor board = case getTurn board of
+        Black -> board {getTurn = White, getBlack = mv $ getBlack board}
+        White -> board {getTurn = Black, getWhite = mv $ getWhite board}
       mv bb = moveSquare bb from to
   EnPassantMove from to -> error "TODO"
 
