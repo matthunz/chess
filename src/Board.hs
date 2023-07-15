@@ -1,6 +1,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module Board (Color (..), attackersTo, standard, Board (..), legalMoves, Move(..), move, fen) where
+module Board (attackersTo, standard, Board (..), legalMoves, Move(..), move, fen) where
 
 import Attacks
 import BitBoard

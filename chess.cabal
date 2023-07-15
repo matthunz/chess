@@ -5,9 +5,28 @@ maintainer:         matthunz2@gmail.com
 author:             Matt Hunzinger
 extra-source-files: CHANGELOG.md
 
+library
+    exposed-modules:
+        Attacks
+        BitBoard
+        Board
+        Square
+
+    hs-source-dirs:   src
+    other-modules:    Attacks.Internal
+    default-language: Haskell2010
+    ghc-options:
+        -Wall -Wcompat -Widentities -Wincomplete-record-updates
+        -Wincomplete-uni-patterns -Wmissing-export-lists
+        -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+
+    build-depends:
+        base >=4.7 && <5,
+        template-haskell
+
 executable chess
     main-is:          Main.hs
-    hs-source-dirs:   app
+    hs-source-dirs:   src
     other-modules:
         Attacks
         Attacks.Internal
@@ -17,4 +36,6 @@ executable chess
         Types
 
     default-language: Haskell2010
-    build-depends:    base ^>=4.16.4.0,template-haskell
+    build-depends:
+        base ^>=4.16.4.0,
+        template-haskell
