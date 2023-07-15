@@ -1,9 +1,21 @@
 module Main where
 
 import Data.Bits
+import Data.Int (Int64)
 
 main :: IO ()
 main = putStrLn "Hello, Haskell!"
+
+newtype BitBoard = BitBoard Int64 deriving (Show)
+
+fromSquare :: Square -> BitBoard
+fromSquare square = BitBoard $ 1 `shiftL` fromEnum square
+
+fromRank :: Rank -> BitBoard
+fromRank rank = BitBoard $ 0xff `shiftL` (fromEnum rank * 8)
+
+fromFile :: File -> BitBoard
+fromFile file = BitBoard $ 0x0101010101010101 `shiftL` fromEnum file
 
 data File = FileA | FileB | FileC | FileD | FileE | FileF | FileG | FileH deriving (Show, Eq, Enum)
 
