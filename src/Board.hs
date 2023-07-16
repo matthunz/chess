@@ -2,6 +2,7 @@
 
 module Board
   ( Board (..),
+
     -- * Constructors
     standard,
 
@@ -24,7 +25,6 @@ module Board
     -- * Pieces
     roleAt,
     pieceAt,
-  
     Move (..),
   )
 where
@@ -108,11 +108,9 @@ roleAt square board
 
 -- | Returns the piece at `square` or `Nothing` if there is none.
 pieceAt :: Square -> Board -> Maybe Piece
-pieceAt square board = case roleAt square board of
-  Just role -> Just $ Piece color role
-  Nothing -> Nothing
-  where
-    color = if contains square $ getBlack board then Black else White
+pieceAt square board =
+  let color = if contains square $ getBlack board then Black else White
+   in Piece color <$> roleAt square board
 
 byColor :: Color -> Board -> BitBoard
 byColor Black = getBlack
