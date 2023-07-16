@@ -13,17 +13,6 @@ import Types
 --- Role of a piece
 data Role = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
---- Move to perform on a chess board
-data Move
-  = NormalMove
-      { normalRole :: Role,
-        normalFrom :: Square,
-        normalTo :: Square,
-        normalCapture :: Maybe Role
-      }
-  | EnPassantMove Square Square
-  deriving (Show)
-
 --- Chess board
 data Board = Board
   { getTurn :: Color,
@@ -68,25 +57,6 @@ standard =
     (BitBoard 0xffff_0000_0000_0000)
     (BitBoard 0xffff)
     (BitBoard 0xffff_0000_0000_ffff)
-
---- Perform a move on the board
-move :: Move -> Board -> Board
-move m board = case m of
-  NormalMove role from to capture ->
-    moveRole $ moveColor board
-    where
-      moveRole board = case role of
-        Pawn -> board {getPawns = mv $ getPawns board}
-        Knight -> board {getKnights = mv $ getKnights board}
-        Bishop -> board {getBishops = mv $ getBishops board}
-        Rook -> board {getRooks = mv $ getRooks board}
-        Queen -> board {getQueens = mv $ getQueens board}
-        King -> board {getKings = mv $ getKings board}
-      moveColor board = case getTurn board of
-        Black -> board {getTurn = White, getBlack = mv $ getBlack board}
-        White -> board {getTurn = Black, getWhite = mv $ getWhite board}
-      mv bb = moveSquare bb from to
-  EnPassantMove from to -> error "TODO"
 
 --- Returns the attackers of a color to the given square
 attackersTo :: Square -> Color -> Board -> BitBoard
@@ -162,6 +132,36 @@ them board = byColor (toggle $ getTurn board) board
 our :: Role -> Board -> BitBoard
 our role board = us board .&. byRole role board
 
+--- Move to perform on a chess board
+data Move
+  = NormalMove
+      { normalRole :: Role,
+        normalFrom :: Square,
+        normalTo :: Square,
+        normalCapture :: Maybe Role
+      }
+  | EnPassantMove Square Square
+  deriving (Show)
+
+--- Perform a move on the board
+move :: Move -> Board -> Board
+move m board = case m of
+  NormalMove role from to capture ->
+    moveRole $ moveColor board
+    where
+      moveRole board = case role of
+        Pawn -> board {getPawns = mv $ getPawns board}
+        Knight -> board {getKnights = mv $ getKnights board}
+        Bishop -> board {getBishops = mv $ getBishops board}
+        Rook -> board {getRooks = mv $ getRooks board}
+        Queen -> board {getQueens = mv $ getQueens board}
+        King -> board {getKings = mv $ getKings board}
+      moveColor board = case getTurn board of
+        Black -> board {getTurn = White, getBlack = mv $ getBlack board}
+        White -> board {getTurn = Black, getWhite = mv $ getWhite board}
+      mv bb = moveSquare bb from to
+  EnPassantMove from to -> error "TODO"
+
 pawnMoves :: BitBoard -> Board -> [Move]
 pawnMoves target board =
   let (east, west) = case getTurn board of
@@ -182,24 +182,26 @@ pawnMoves target board =
          in map moveTo (squares $ captures .&. backRanks)
    in pawnCaptures east ++ pawnCaptures west
 
-knightMoves :: BitBoard -> Board -> [Move]
-knightMoves (BitBoard target) board = concatMap f (squares $ getKnights board)
+stepperMoves :: Role -> (Square -> BitBoard) -> BitBoard -> Board -> [Move]
+stepperMoves role getAttacks target board = concatMap withFrom (squares $ byRole role board)
   where
-    f from =
-      map
-        ( \to ->
+    withFrom from =
+      let withTo to =
             NormalMove
-              { normalRole = Knight,
+              { normalRole = role,
                 normalFrom = from,
                 normalTo = to,
                 normalCapture = roleAt to board
               }
-        )
-        (squares $ BitBoard $ target .&. attacks)
-      where
-        BitBoard attacks = knightAttacks from
+       in map withTo (squares $ target .&. getAttacks from)
+
+knightMoves :: BitBoard -> Board -> [Move]
+knightMoves = stepperMoves Knight knightAttacks
+
+kingMoves :: BitBoard -> Board -> [Move]
+kingMoves = stepperMoves Knight kingAttacks
 
 legalMoves :: Board -> [Move]
 legalMoves board =
   let bb = (complement $ us board)
-   in pawnMoves bb board ++ knightMoves bb board
+   in pawnMoves bb board ++ knightMoves bb board ++ kingMoves bb board
