@@ -1,6 +1,6 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module Board (attackersTo, standard, Board (..), legalMoves, Move(..), move, fen) where
+module Board (attackersTo, standard, Board (..), legalMoves, Move (..), move, fen) where
 
 import Attacks
 import BitBoard
@@ -130,6 +130,38 @@ pieceChar (Piece color role) = case color of
       Queen -> 'Q'
       King -> 'K'
 
+byColor :: Color -> Board -> BitBoard
+byColor Black = getBlack
+byColor White = getWhite
+
+-- Returns the pieces of the current player
+us :: Board -> BitBoard
+us board = byColor (getTurn board) board
+
+-- Returns the pieces of the next player
+them :: Board -> BitBoard
+them board = byColor (toggle $ getTurn board) board
+
+pawnMoves :: BitBoard -> Board -> [Move]
+pawnMoves target board =
+  let (east, west) = case getTurn board of
+        Black -> (SouthEast, SouthWest)
+        White -> (NorthEast, NorthWest)
+
+      -- TODO promotions
+      pawnCaptures dir =
+        let backRanks = BitBoard 0xff00_0000_0000_00ff
+            captures = translate dir (us board .&. getPawns board) .&. them board .&. target
+            f to =
+              NormalMove
+                { normalRole = Pawn,
+                  normalTo = to,
+                  normalFrom = toEnum (fromEnum to - offset dir),
+                  normalCapture = roleAt to board
+                }
+         in map f (squares $ captures .&. backRanks)
+   in pawnCaptures east ++ pawnCaptures west
+
 knightMoves :: BitBoard -> Board -> [Move]
 knightMoves (BitBoard target) board = concatMap f (squares $ getKnights board)
   where
@@ -149,12 +181,5 @@ knightMoves (BitBoard target) board = concatMap f (squares $ getKnights board)
 
 legalMoves :: Board -> [Move]
 legalMoves board =
-  let BitBoard bb =
-        ( case getTurn board of
-            Black -> getBlack
-            White -> getWhite
-        )
-          board
-   in knightMoves
-        (BitBoard $ complement bb)
-        board
+  let bb = (complement $ us board)
+   in pawnMoves bb board ++ knightMoves bb board

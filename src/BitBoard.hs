@@ -8,6 +8,9 @@ module BitBoard
     moveSquare,
     squares,
     BitBoard (..),
+    Direction (..),
+    translate,
+    offset
   )
 where
 
@@ -67,3 +70,25 @@ squares (BitBoard bb) = f 0 bb
       | squareIndex >= 64 = []
       | testBit b squareIndex = toEnum squareIndex : f (squareIndex + 1) b
       | otherwise = f (squareIndex + 1) b
+
+data Direction
+  = NorthWest
+  | NorthEast
+  | SouthWest
+  | SouthEast
+
+offset :: Direction -> Int
+offset d = case d of
+  NorthWest -> 7
+  SouthWest -> -9
+  NorthEast -> 9
+  SouthEast -> -7
+
+translate :: Direction -> BitBoard -> BitBoard
+translate d bb =
+  let file_a = BitBoard 0x101_0101_0101_0101
+   in case d of
+        NorthWest -> (bb .&. complement file_a) `shiftL` 7
+        SouthWest -> (bb .&. complement file_a) `shiftR` 9
+        NorthEast -> (bb `shiftL` 9) .&. complement file_a
+        SouthEast -> (bb `shiftR` 7) .&. complement file_a
