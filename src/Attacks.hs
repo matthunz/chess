@@ -4,8 +4,6 @@ module Attacks (pawnAttacks, knightAttacks, kingAttacks) where
 
 import Attacks.Internal
 import BitBoard (BitBoard (BitBoard))
-import Data.Int (Int64)
-import Data.Word (Word64)
 import Language.Haskell.TH.Syntax (lift)
 import Square (Square)
 import Piece (Color (..))

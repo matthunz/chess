@@ -1,8 +1,6 @@
 module Square  (File(..), Rank(..), Square(..), square) where
 
 import Data.Bits
-import Data.Int (Int64)
-import Data.Word (Word64)
 
 data File = FileA | FileB | FileC | FileD | FileE | FileF | FileG | FileH deriving (Show, Eq, Enum)
 
