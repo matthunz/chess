@@ -1,17 +1,43 @@
 {-# LANGUAGE NumericUnderscores #-}
 
-module Board (attackersTo, standard, Board (..), legalMoves, Move (..), move, fen, checkers) where
+module Board
+  ( Board (..),
+    -- * Constructors
+    standard,
+
+    -- * Bitboards
+    byColor,
+    byRole,
+    us,
+    them,
+    our,
+    attackersTo,
+    checkers,
+
+    -- * Serialization
+    fen,
+
+    -- * Moves
+    move,
+    moves,
+
+    -- * Pieces
+    roleAt,
+    pieceAt,
+  
+    Move (..),
+  )
+where
 
 import Attacks
 import BitBoard
 import Data.Bits
 import Data.Int (Int64)
 import Data.Word (Word64)
-import Square
 import Piece
+import Square
 
-
---- Chess board
+-- | Chess board
 data Board = Board
   { getTurn :: Color,
     getPawns :: BitBoard,
@@ -26,7 +52,7 @@ data Board = Board
   }
   deriving (Show)
 
---- Output the FEN text of a board
+-- | Output the FEN text of a board
 fen :: Board -> String
 fen board = concatMap withRank (reverse $ enumFromTo Rank1 Rank8)
   where
@@ -41,7 +67,7 @@ fen board = concatMap withRank (reverse $ enumFromTo Rank1 Rank8)
              in (0, acc ++ s ++ [pieceChar piece])
           Nothing -> (count + 1, acc)
 
---- Create a board with the standard starting position
+-- | Create a board with the standard starting position
 standard :: Board
 standard =
   Board
@@ -80,7 +106,6 @@ roleAt square board
   where
     check f = contains square (f board)
 
-
 -- | Returns the piece at `square` or `Nothing` if there is none.
 pieceAt :: Square -> Board -> Maybe Piece
 pieceAt square board = case roleAt square board of
@@ -88,8 +113,6 @@ pieceAt square board = case roleAt square board of
   Nothing -> Nothing
   where
     color = if contains square $ getBlack board then Black else White
-
-
 
 byColor :: Color -> Board -> BitBoard
 byColor Black = getBlack
@@ -104,18 +127,19 @@ byRole role = case role of
   Queen -> getQueens
   King -> getKings
 
--- Returns the pieces of the current player
+-- | Returns the pieces of the current player
 us :: Board -> BitBoard
 us board = byColor (getTurn board) board
 
--- Returns the pieces of the next player
+-- | Returns the pieces of the next player
 them :: Board -> BitBoard
 them board = byColor (toggle $ getTurn board) board
 
+-- | Returns the pieces of the current player with the given role.
 our :: Role -> Board -> BitBoard
 our role board = us board .&. byRole role board
 
---- Move to perform on a chess board
+-- | Move to perform on a chess board
 data Move
   = NormalMove
       { normalRole :: Role,
@@ -126,7 +150,7 @@ data Move
   | EnPassantMove Square Square
   deriving (Show)
 
---- Perform a move on the board
+-- | Perform a move on the board
 move :: Move -> Board -> Board
 move m board = case m of
   NormalMove role from to capture ->
@@ -184,7 +208,8 @@ knightMoves = stepperMoves Knight knightAttacks
 kingMoves :: BitBoard -> Board -> [Move]
 kingMoves = stepperMoves Knight kingAttacks
 
-legalMoves :: Board -> [Move]
-legalMoves board =
+-- | Generate all legal moves
+moves :: Board -> [Move]
+moves board =
   let bb = (complement $ us board)
    in pawnMoves bb board ++ knightMoves bb board ++ kingMoves bb board
