@@ -8,7 +8,7 @@ import Data.Int (Int64)
 import Data.Word (Word64)
 import Language.Haskell.TH.Syntax (lift)
 import Square (Square)
-import Types (Color (..))
+import Piece (Color (..))
 
 pawnAttacks :: Color -> Square -> BitBoard
 pawnAttacks color square = BitBoard $ case color of

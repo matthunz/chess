@@ -8,10 +8,8 @@ import Data.Bits
 import Data.Int (Int64)
 import Data.Word (Word64)
 import Square
-import Types
+import Piece
 
---- Role of a piece
-data Role = Pawn | Knight | Bishop | Rook | Queen | King deriving (Show, Eq)
 
 --- Chess board
 data Board = Board
@@ -58,16 +56,18 @@ standard =
     (BitBoard 0xffff)
     (BitBoard 0xffff_0000_0000_ffff)
 
---- Returns the attackers of a color to the given square
+-- | Returns the attackers of a color to the given square
 attackersTo :: Square -> Color -> Board -> BitBoard
 attackersTo square attacker board =
   (pawnAttacks attacker square .&. getPawns board) <> (knightAttacks square .&. getKnights board)
 
+-- | Returns the attackers to the current player's king
 checkers :: Board -> BitBoard
 checkers board = case squares $ our King board of
   [] -> BitBoard 0
   (sq : _) -> attackersTo sq (toggle $ getTurn board) board
 
+-- | Returns the role of the piece at `square` or `Nothing` if there is none.
 roleAt :: Square -> Board -> Maybe Role
 roleAt square board
   | check getPawns = Just Pawn
@@ -80,8 +80,8 @@ roleAt square board
   where
     check f = contains square (f board)
 
-data Piece = Piece Color Role
 
+-- | Returns the piece at `square` or `Nothing` if there is none.
 pieceAt :: Square -> Board -> Maybe Piece
 pieceAt square board = case roleAt square board of
   Just role -> Just $ Piece color role
@@ -89,24 +89,7 @@ pieceAt square board = case roleAt square board of
   where
     color = if contains square $ getBlack board then Black else White
 
-pieceChar :: Piece -> Char
-pieceChar (Piece color role) = case color of
-  Black ->
-    case role of
-      Pawn -> 'p'
-      Knight -> 'n'
-      Bishop -> 'b'
-      Rook -> 'r'
-      Queen -> 'q'
-      King -> 'k'
-  White ->
-    case role of
-      Pawn -> 'P'
-      Knight -> 'N'
-      Bishop -> 'B'
-      Rook -> 'R'
-      Queen -> 'Q'
-      King -> 'K'
+
 
 byColor :: Color -> Board -> BitBoard
 byColor Black = getBlack
